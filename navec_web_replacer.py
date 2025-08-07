@@ -29,19 +29,31 @@ class NavecReplacer:
         self._load_model()
     
     def _load_model(self):
-        """Load Navec model"""
+        """Load Navec model with automatic download"""
         if not NAVEC_AVAILABLE:
             print("Navec not installed. Install with: pip install navec")
             return
             
         try:
+            # Try to load local model first
             if os.path.exists(self.model_path):
-                print("Loading Navec model...")
+                print("Loading local Navec model...")
                 self.model = Navec.load(self.model_path)
                 print(f"Model loaded! Vocabulary size: {len(self.model.vocab.words)}")
             else:
-                print(f"Model file {self.model_path} not found.")
-                print("Download from: https://github.com/natasha/navec")
+                # Try to download and load model automatically
+                print("Local model not found. Attempting to download...")
+                try:
+                    import urllib.request
+                    model_url = "https://storage.yandexcloud.net/natasha-navec/packs/navec_hudlit_v1_12B_500K_300d_100q.tar"
+                    print(f"Downloading model from {model_url}...")
+                    urllib.request.urlretrieve(model_url, self.model_path)
+                    print("Model downloaded successfully!")
+                    self.model = Navec.load(self.model_path)
+                    print(f"Model loaded! Vocabulary size: {len(self.model.vocab.words)}")
+                except Exception as download_error:
+                    print(f"Failed to download model: {download_error}")
+                    print("Please download manually from: https://github.com/natasha/navec")
         except Exception as e:
             print(f"Error loading model: {e}")
     
@@ -304,5 +316,6 @@ def replace():
 if __name__ == '__main__':
     print("Starting Navec Web Replacer...")
     print("Install requirements: pip install navec nltk flask")
-    print("Open http://localhost:4000 in your browser")
-    app.run(debug=True, host='0.0.0.0', port=4000)
+    port = int(os.environ.get('PORT', 4000))
+    print(f"Open http://localhost:{port} in your browser")
+    app.run(debug=False, host='0.0.0.0', port=port)
